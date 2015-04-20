@@ -42,6 +42,13 @@ portfolio = [
 min_shares = min (s['shares'] for s in portfolio)
 print (min_shares)
 
+# --------------------------------------------------------------------
+# a subtle syntactic aspect of generator expressions when supplied as the 
+# single argument to a function (i.e., you don’t need repeated parentheses)
+s1 = sum((x * x for x in nums)) # Pass generator-expr as argument
+print (s1)
 
+s2 = sum(x * x for x in nums) # More elegant syntax
+print (s2)
 
 
