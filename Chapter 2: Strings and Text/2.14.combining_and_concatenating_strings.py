@@ -36,20 +36,53 @@ print (':'.join([a, b, c])) 	#Still ugly
 print (a, b , c, sep=':') 		#Better
 
 
+f = open('testfile.txt', 'w')
 # Mixing I/O operations and string concatenation
 chunk1 = 'chunk1'
 chunk2 = 'chunk2'
 # Version 1 (string concatenation)
-f.write(chunk1 + chunk2)
+f.write(chunk1 + chunk2 + '\n')
 # Version 2 (separate I/O operations)
 f.write(chunk1)
 f.write(chunk2)
+f.write('\n')
+
+# If the two strings are small, the first version might offer much better performance due
+# to the inherent expense of carrying out an I/O system call. 
+
+# On the other hand, if the two strings are large, the second version may be more efficient, 
+# since it avoids making a large temporary result and copying large blocks of memory around. 
 
 
+# code as a generator function, using yield to emit fragments
+def sample():
+	yield 'Is'
+	yield 'Chicago'
+	yield 'Not'
+	yield 'Chicago?'
 
+# it makes no assumption about how the fragments are to be assembled together
+# Join
+print (''.join(sample()))
+# redirect the fragments to I/O
+for part in sample():
+	f.write(part)
+f.write('\n')
+# hybrid scheme that’s smart about combining I/O operations
+def combine(source, maxsize):
+	parts = []
+	size = 0
+	for part in source:
+		parts.append(part)
+		size += len(part)
+		if size > maxsize:
+			yield ''.join(parts)
+			parts = []
+			size = 0
+	yield ''.join(parts)
 
-
-
+for part in combine(sample(), 32768):
+	f.write(part)
 
 
 
