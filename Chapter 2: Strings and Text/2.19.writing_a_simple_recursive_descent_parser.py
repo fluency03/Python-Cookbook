@@ -146,21 +146,76 @@ class ExpressionEvaluator:
 e = ExpressionEvaluator()
 
 print (e.parse('2'))
+print (e.parse('3 + 10'))
+print (e.parse('2 + 6 * 4'))
+print (e.parse('5 + (7 + 1) * 2'))
+
+# print (e.parse('5 + (7 + * 2)'))
+# Traceback (most recent call last):
+#   File "2.19.writing_a_simple_recursive_descent_parser.py", line 152, in <module>
+#     print (e.parse('5 + (7 + * 2)'))
+#   File "2.19.writing_a_simple_recursive_descent_parser.py", line 89, in parse
+#     return self.expr()
+#   File "2.19.writing_a_simple_recursive_descent_parser.py", line 116, in expr
+#     right = self.term()
+#   File "2.19.writing_a_simple_recursive_descent_parser.py", line 125, in term
+#     termval = self.factor()
+#   File "2.19.writing_a_simple_recursive_descent_parser.py", line 140, in factor
+#     exprval = self.expr()
+#   File "2.19.writing_a_simple_recursive_descent_parser.py", line 116, in expr
+#     right = self.term()
+#   File "2.19.writing_a_simple_recursive_descent_parser.py", line 125, in term
+#     termval = self.factor()
+#   File "2.19.writing_a_simple_recursive_descent_parser.py", line 144, in factor
+#     raise SyntaxError('Expected NUMBER or LPAREN')
+# SyntaxError: Expected NUMBER or LPAREN 
 
 
+# -----------------------------------------------------------------------------------
+
+class ExpressionTreeBuilder(ExpressionEvaluator):
+	def expr(self):
+		"expression ::= term { ('+'|'-') term }"
+		exprval = self.term()
+		while self._accept('PLUS') or self._accept('MINUS'):
+			op = self.tok.type
+			right = self.term()
+			if op == 'PLUS':
+				exprval = ('+', exprval, right)
+			elif op == 'MINUS':
+				exprval = ('-', exprval, right)
+		return exprval
+
+	def term(self):
+		"term ::= factor { ('*'|'/') factor }*"
+		termval = self.factor()
+		while self._accept('TIMES') or self._accept('DIVIDE'):
+			op = self.tok.type
+			right = self.factor()
+			if op == 'TIMES':
+				termval = ('*', termval, right)
+			elif op == 'DIVIDE':
+				termval = ('/', termval, right)
+		return termval
+
+	def factor(self):
+		"factor ::= NUM | ( expr )"
+		if self._accept('NUM'):
+			return int(self.tok.value)
+		elif self._accept('LPAREN'):
+			exprval = self.expr()
+			self._expect('RPAREN')
+			return exprval
+		else:
+			raise SyntaxError('Expected NUMBER or LPAREN')
 
 
+e2 = ExpressionTreeBuilder()
 
-
-
-
-
-
-
-
-
-
-
+print (e2.parse('2'))
+print (e2.parse('3 + 10'))
+print (e2.parse('2 + 6 * 4'))
+print (e2.parse('5 + (7 + 1) * 2'))
 
 
 
