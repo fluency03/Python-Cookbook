@@ -218,12 +218,145 @@ print (e2.parse('2 + 6 * 4'))
 print (e2.parse('5 + (7 + 1) * 2'))
 
 
+# Discussion ---------------------------------------------------------------------
+
+# It must walk from left to right over each part of the grammar rule, consuming tokens in 
+# the process. In a sense, the goal of the method is to either consume the rule or 
+# generate a syntax error if it gets stuck.
+
+# • If the next symbol in the rule is the name of another grammar rule (e.g., term or
+	# factor ), you simply call the method with the same name. "Descent" and "Recursive". 
+
+# • If the next symbol in the rule has to be a specific symbol (e.g., ( ), you look at the
+	# next token and check for an exact match.
+	# Done by _expect()
+
+# • If the next symbol in the rule could be a few possible choices (e.g., + or - ), you have
+	# to check the next token for each possibility and advance only if a match is made.
+	# Done by _accept()
+
+# • For grammar rules where there are repeated parts (e.g., such as in the rule expr ::=
+	# term { ('+'|'-') term }* ), the repetition gets implemented by a while loop.
+
+# • Once an entire grammar rule has been consumed, each method returns some kind
+	# of result back to the caller.
+	# E.g., the final result
+
+
+# One such limitation of recursive descent parsers is that they can’t be written for 
+# grammar rules involving any kind of left recursion. 
+
+# For example, 
+# items ::= items ',' item
+		# | item
+
+# class TestItems(ExpressionEvaluator):
+# 	def items(self):
+# 		itemsval = self.items()
+# 		if itemsval and self._accept(','):
+# 			itemsval.append(self.item())
+# 		else:
+			# itemsval = [ self.item() ]
+
+# e3 = TestItems()
+
+# print (e3.items()) # RuntimeError: maximum recursion depth exceeded
+
+# it blows up with an infinite recursion error.
 
 
 
+# ------------------------------------------------------------------------------
+# Using tools given for processing more complicated ones. 
+
+from ply.lex import lex
+from ply.yacc import yacc
+
+# Token list
+t_tokens = [ 'NUM', 'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'LPAREN', 'RPAREN' ]
+
+# Ignored characters
+
+t_ignore = '\t\n'
+
+# Token specifications (as regexs)
+t_PLUS = r'\+'
+t_MINUS = r'-'
+t_TIMES = r'\*'
+t_DIVIDE = r'/'
+t_LPAREN = r'\('
+t_RPAREN = r'\)'
+
+# Token processing functions
+def t_NUM(t):
+	r'\d+'
+	t.value = int(t.value)
+	return t
+
+# Error handler
+def t_error(t):
+	print ('Bad character: {!r}'.fromat(t.value[0]))
+	t.skip(1)
+
+# Build the lexer
+lexer = lex()
+
+# Grammar rules and handler functions
+def p_expr(p):
+	'''
+	expr : expr PLUS term
+		| expr MINUS term
+	'''
+	if p[2] == '+':
+		p[0] = p[1] + p[3]
+	elif p[2] == '-':
+		p[0] = p[1] - p[3]
+
+def p_expr_term(p):
+	'''
+	expr : term
+	'''
+	p[0] = p[1]
+
+def p_term(p):
+	'''
+	term : term TIMES factor
+		| term DIVIDE factor
+	'''
+	if p[2] == '*':
+		p[0] = p[1] * p[3]
+	elif p[2] == '/':
+		p[0] = p[1] / p[3]
+
+def p_term_factor(p):
+	'''
+	term : factor
+	'''
+	p[0] = p[1]
+
+def p_factor(p):
+	'''
+	factor : NUM
+	'''
+	p[0] = p[1]
+
+def p_factor_group(p):
+	'''
+	factor : LPAREN expr RPAREN
+	'''
+	p[0] = p[2]
+
+def p_error(p):
+	print ('Syntax error.')
 
 
+parser = yacc()
 
+print (parser.parse('2'))
+print (parser.parse('2+3'))
+print (parser.parse('2+(3+4)*5')) 
+
+# ImportError: No module named 'ply'
 
 
 
